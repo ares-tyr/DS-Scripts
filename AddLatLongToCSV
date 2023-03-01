@@ -1,0 +1,24 @@
+import pandas as pd
+import urllib.parse
+import requests
+
+# Load the Excel file
+df = pd.read_csv("data.csv")
+
+# Create URL with address search term
+df["zip"] = df["zip"].astype(str)
+df["addy"] = df["Address"] + "," + df["state"] + "," + df["zip"]
+df["url"] = df["addy"].astype(str).apply(lambda a: urllib.parse.quote(a))
+
+a = "https://nominatim.openstreetmap.org/search/"
+b = "?format=json"
+
+df["url2"] = a + df["url"] + b
+
+# GET Latitude and Longitude
+df["lat"] = df["url2"].apply(lambda b: requests.get(b).json()[0]["lat"])
+df["lon"] = df["url2"].apply(lambda b: requests.get(b).json()[0]["lon"])
+
+# Clean up and export
+df.drop(columns=["addy", "url", "url2"])
+df.to_json("dataWithLatLon.json", orient="records")
